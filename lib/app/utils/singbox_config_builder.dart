@@ -1152,6 +1152,13 @@ class SingboxConfigBuilder {
         }
         if (type == "vless" || type == "vmess" || type == "trojan") {
           var transport = tls["transport"];
+          // XHTTP ("xhttp" / "splithttp") is its own transport family —
+          // the TLS-tricks pipeline (mixed-case SNI, padding, uTLS custom
+          // fingerprint) should not be applied to xhttp flows because they
+          // manage their own HTTP framing.
+          if (transport == "xhttp" || transport == "splithttp") {
+            continue;
+          }
           if (transport != "ws" &&
               transport != "grpc" &&
               transport != "httpupgrade") {

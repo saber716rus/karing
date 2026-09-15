@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:karing/app/runtime/return_result.dart';
 import 'package:karing/app/utils/clash_yaml.dart';
 import 'package:karing/app/utils/singbox_json.dart';
+import 'package:karing/app/utils/xhttp_utils.dart';
 
 abstract final class ClashToSingbox {
   static ReturnResultError? convert(
@@ -294,6 +295,12 @@ abstract final class ClashToSingbox {
       singbox.vmess!.transport = makeQuicOpts();
       return null;
     }
+    // XHTTP transport for VMess.
+    if (vmess.xhttp_opts != null || isXHttpNetwork(vmess.network)) {
+      vmess.xhttp_opts ??= ClashYamlXHttpOptions();
+      singbox.vmess!.transport = makeXHttpOpts(vmess.xhttp_opts);
+      return null;
+    }
     return null;
   }
 
@@ -382,6 +389,12 @@ abstract final class ClashToSingbox {
           makeHttpOpts(vless.http_opts!, vless.servername, clash.server);
       return null;
     }
+    // XHTTP transport — modern replacement for ws/httpupgrade/grpc.
+    if (vless.xhttp_opts != null || isXHttpNetwork(vless.network)) {
+      vless.xhttp_opts ??= ClashYamlXHttpOptions();
+      singbox.vless!.transport = makeXHttpOpts(vless.xhttp_opts);
+      return null;
+    }
     return null;
   }
 
@@ -430,6 +443,12 @@ abstract final class ClashToSingbox {
     }
     if (trojan.network == "quic") {
       singbox.trojan!.transport = makeQuicOpts();
+      return null;
+    }
+    // XHTTP transport for Trojan.
+    if (trojan.xhttp_opts != null || isXHttpNetwork(trojan.network)) {
+      trojan.xhttp_opts ??= ClashYamlXHttpOptions();
+      singbox.trojan!.transport = makeXHttpOpts(trojan.xhttp_opts);
       return null;
     }
     return null;
@@ -899,6 +918,72 @@ abstract final class ClashToSingbox {
   static SingboxJsonTransportOptions? makeQuicOpts() {
     SingboxJsonTransportOptions transport = SingboxJsonTransportOptions();
     transport.type = "quic";
+    return transport;
+  }
+
+  /// Convert a ClashYamlXHttpOptions into a sing-box transport object.
+  /// Returns null if `xhttp_opts` is null/empty.
+  static SingboxJsonTransportOptions? makeXHttpOpts(
+      ClashYamlXHttpOptions? xhttpOpts) {
+    if (xhttpOpts == null || xhttpOpts.isEmpty) {
+      return null;
+    }
+    // Validate xmux config — sing-box rejects (max_concurrency > 0)
+    // combined with (max_connections > 0).
+    final xmuxValidation = validateXHttpXmux(xhttpOpts.xmux);
+    if (xmuxValidation.item1 != true) {
+      // silently pick max_concurrency when both are set, since that's the
+      // more recently documented mode
+      if (xhttpOpts.xmux?.max_concurrency != null &&
+          xhttpOpts.xmux?.max_connections != null) {
+        xhttpOpts.xmux!.max_connections = null;
+      }
+    }
+    // Validate mode (auto / packet-up / stream-up / stream-one)
+    final modeError = validateXHttpMode(xhttpOpts.mode);
+    if (modeError != null) {
+      // drop the invalid mode and let sing-box use its default ("auto")
+      xhttpOpts.mode = null;
+    }
+
+    final transport = SingboxJsonTransportOptions();
+    transport.type = "xhttp";
+    transport.xhttp_opts = SingboxJsonTransportXHttpOptions();
+    transport.xhttp_opts!.base.path = xhttpOpts.path;
+    transport.xhttp_opts!.base.host = xhttpOpts.host;
+    transport.xhttp_opts!.base.mode = xhttpOpts.mode;
+    transport.xhttp_opts!.base.headers = xhttpOpts.headers;
+    if (xhttpOpts.download != null) {
+      transport.xhttp_opts!.download =
+          SingboxJsonTransportXHttpDownloadOptions();
+      // The Clash "download" sub-block carries either an "extra" JSON blob
+      // (modern Xray) or the legacy fields {mode, path, host, headers}.
+      // We pass these through to sing-box's `download` map verbatim.
+      transport.xhttp_opts!.download!.download_url =
+          xhttpOpts.download!.extra;
+      transport.xhttp_opts!.download!.download_detour =
+          xhttpOpts.download!.host;
+      // Stash the rest as raw so the toJson() pass-through carries it.
+      transport.xhttp_opts!.download!.raw = {
+        if (xhttpOpts.download!.mode != null)
+          'mode': xhttpOpts.download!.mode,
+        if (xhttpOpts.download!.path != null)
+          'path': xhttpOpts.download!.path,
+        if (xhttpOpts.download!.host != null)
+          'host': xhttpOpts.download!.host,
+        if (xhttpOpts.download!.headers != null)
+          'headers': xhttpOpts.download!.headers,
+      };
+    }
+    if (xhttpOpts.xmux != null && !xhttpOpts.xmux!.isEmpty) {
+      transport.xhttp_opts!.xmux = SingboxJsonTransportXHttpOptionsXmux()
+        ..max_concurrency = xhttpOpts.xmux!.max_concurrency
+        ..max_connections = xhttpOpts.xmux!.max_connections
+        ..c_max_reuse_times = xhttpOpts.xmux!.c_max_reuse_times
+        ..h_max_request_times = xhttpOpts.xmux!.h_max_request_times
+        ..h_max_reusable_secs = xhttpOpts.xmux!.h_max_reusable_secs
+        ..h_keep_alive_period = xhttpOpts.xmux!.h_keep_alive_period;
+    }
     return transport;
   }
 

@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:karing/app/utils/convert_utils.dart';
 import 'package:karing/app/utils/emoji_utils.dart';
+import 'package:karing/app/utils/xhttp_utils.dart';
 import 'package:yaml/yaml.dart';
 
 //doc https://wiki.metacubex.one/config/proxies/
@@ -573,6 +574,7 @@ class ClashYamlOutboundVmessOptions {
   ClashYamlHttpupgradeOptions? httpupgrade_opts;
   ClashYamlHTTPOptions? http_opts;
   ClashYamlGRPCOptions? grpc_opts;
+  ClashYamlXHttpOptions? xhttp_opts;
   ClashYamlMuxOptions? mux;
   ClashYamlOutboundTlsOptions tls_opts = ClashYamlOutboundTlsOptions();
 
@@ -594,6 +596,8 @@ class ClashYamlOutboundVmessOptions {
         ClashYamlHttpupgradeOptions.fromYamlStatic(map["h2-opts"]);
     http_opts = ClashYamlHTTPOptions.fromYamlStatic(map["http-opts"]);
     grpc_opts = ClashYamlGRPCOptions.fromYamlStatic(map["grpc-opts"]);
+    xhttp_opts =
+        ClashYamlXHttpOptions.fromYamlStatic(map["xhttp-opts"]);
     mux = ClashYamlMuxOptions.fromYamlStatic(map["smux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["yamux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["h2mux"]);
@@ -637,6 +641,7 @@ class ClashYamlOutboundVlessOptions {
   ClashYamlHttpupgradeOptions? httpupgrade_opts;
   ClashYamlHTTPOptions? http_opts;
   ClashYamlGRPCOptions? grpc_opts;
+  ClashYamlXHttpOptions? xhttp_opts;
   ClashYamlMuxOptions? mux;
   ClashYamlOutboundTlsOptions tls_opts = ClashYamlOutboundTlsOptions();
 
@@ -659,6 +664,8 @@ class ClashYamlOutboundVlessOptions {
         ClashYamlHttpupgradeOptions.fromYamlStatic(map["h2-opts"]);
     http_opts = ClashYamlHTTPOptions.fromYamlStatic(map["http-opts"]);
     grpc_opts = ClashYamlGRPCOptions.fromYamlStatic(map["grpc-opts"]);
+    xhttp_opts =
+        ClashYamlXHttpOptions.fromYamlStatic(map["xhttp-opts"]);
     mux = ClashYamlMuxOptions.fromYamlStatic(map["smux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["yamux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["h2mux"]);
@@ -695,6 +702,7 @@ class ClashYamlOutboundTrojanOptions {
   String? network;
   ClashYamlWSOptions? ws_opts;
   ClashYamlGRPCOptions? grpc_opts;
+  ClashYamlXHttpOptions? xhttp_opts;
   ClashYamlMuxOptions? mux;
   ClashYamlOutboundTlsOptions tls_opts = ClashYamlOutboundTlsOptions();
 
@@ -709,6 +717,8 @@ class ClashYamlOutboundTrojanOptions {
     network = map["network"];
     ws_opts = ClashYamlWSOptions.fromYamlStatic(map["ws-opts"]);
     grpc_opts = ClashYamlGRPCOptions.fromYamlStatic(map["grpc-opts"]);
+    xhttp_opts =
+        ClashYamlXHttpOptions.fromYamlStatic(map["xhttp-opts"]);
     mux = ClashYamlMuxOptions.fromYamlStatic(map["smux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["yamux"]);
     mux ??= ClashYamlMuxOptions.fromYamlStatic(map["h2mux"]);

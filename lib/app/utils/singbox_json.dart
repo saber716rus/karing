@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:karing/app/modules/setting_manager.dart';
 import 'package:karing/app/utils/convert_utils.dart';
+import 'package:karing/app/utils/xhttp_utils.dart';
 
 import 'package:karing/i18n/strings.g.dart';
 import 'package:karing/screens/group_item_creator.dart';
@@ -1557,6 +1558,7 @@ class SingboxJsonTransportOptions {
   SingboxJsonTransportGRPCOptions? grpc_opts;
   SingboxJsonTransportQuicOptions? quic_opts;
   SingboxJsonTransportHttpUpgradeOptions? httpupgrade_opts;
+  SingboxJsonTransportXHttpOptions? xhttp_opts;
 
   SingboxJsonTransportOptions({
     this.type,
@@ -1582,6 +1584,9 @@ class SingboxJsonTransportOptions {
     }
     if (httpupgrade_opts != null) {
       ret.addAll(httpupgrade_opts!.toJson());
+    }
+    if (xhttp_opts != null) {
+      ret.addAll(xhttp_opts!.toJson());
     }
     return ret;
   }
@@ -1609,6 +1614,11 @@ class SingboxJsonTransportOptions {
         httpupgrade_opts =
             SingboxJsonTransportHttpUpgradeOptions.fromJsonStatic(map);
         break;
+      case "xhttp":
+      case "splithttp":
+        xhttp_opts =
+            SingboxJsonTransportXHttpOptions.fromJsonStatic(map);
+        break;
     }
   }
 
@@ -1624,7 +1634,7 @@ class SingboxJsonTransportOptions {
 
   static Map<String, List<dynamic>> getAttributes() {
     return {
-      "type": ["http", "ws", "quic", "grpc", "httpupgrade"]
+      "type": ["http", "ws", "quic", "grpc", "httpupgrade", "xhttp"]
     };
   }
 
@@ -1648,6 +1658,7 @@ class SingboxJsonTransportOptions {
                     grpc_opts = null;
                     quic_opts = null;
                     httpupgrade_opts = null;
+                    xhttp_opts = null;
                     break;
                   case "ws":
                     ws_opts ??= SingboxJsonTransportWSOptions();
@@ -1655,6 +1666,7 @@ class SingboxJsonTransportOptions {
                     grpc_opts = null;
                     quic_opts = null;
                     httpupgrade_opts = null;
+                    xhttp_opts = null;
                     break;
                   case "quic":
                     ws_opts = null;
@@ -1662,6 +1674,7 @@ class SingboxJsonTransportOptions {
                     grpc_opts = null;
                     quic_opts ??= SingboxJsonTransportQuicOptions();
                     httpupgrade_opts = null;
+                    xhttp_opts = null;
                     break;
                   case "grpc":
                     ws_opts = null;
@@ -1669,14 +1682,25 @@ class SingboxJsonTransportOptions {
                     grpc_opts ??= SingboxJsonTransportGRPCOptions();
                     quic_opts = null;
                     httpupgrade_opts = null;
+                    xhttp_opts = null;
                     break;
                   case "httpupgrade":
                     ws_opts = null;
                     http_opts = null;
                     grpc_opts = null;
                     quic_opts = null;
+                    xhttp_opts = null;
                     httpupgrade_opts ??=
                         SingboxJsonTransportHttpUpgradeOptions();
+                    break;
+                  case "xhttp":
+                  case "splithttp":
+                    ws_opts = null;
+                    http_opts = null;
+                    grpc_opts = null;
+                    quic_opts = null;
+                    httpupgrade_opts = null;
+                    xhttp_opts ??= SingboxJsonTransportXHttpOptions();
                     break;
                 }
               })),

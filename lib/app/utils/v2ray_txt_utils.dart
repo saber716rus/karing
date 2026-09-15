@@ -15,6 +15,7 @@ import 'package:karing/app/utils/singbox_json_utils.dart';
 import 'package:karing/app/utils/stacktrace_utils.dart';
 import 'package:karing/app/utils/tag_gen.dart';
 import 'package:karing/app/utils/uri_utils.dart';
+import 'package:karing/app/utils/xhttp_utils.dart';
 
 class V2RayVemss {
   String? v; //: "2",
@@ -1133,6 +1134,18 @@ class V2RayTxtUtils {
         clash.vless!.httpupgrade_opts!.host = [];
         clash.vless!.httpupgrade_opts!.host!.add(_host);
       }
+    } else if (isXHttpNetwork(_type) ||
+        isXHttpNetwork(clash.vless!.network)) {
+      // XHTTP (also known as "splithttp") — modern Xray transport that
+      // replaces WebSocket/HTTPUpgrade/gRPC for HTTP/2 or HTTP/3 backhaul.
+      // Spec: https://xtls.github.io/en/config/transports/xhttp.html
+      final params = V2RayXHttpUrlParams.parse(uri.queryParameters);
+      clash.vless!.xhttp_opts = ClashYamlXHttpOptions.fromUrlParams(params);
+      if (clash.vless!.network == null ||
+          clash.vless!.network!.isEmpty ||
+          clash.vless!.network == "tcp") {
+        clash.vless!.network = "xhttp";
+      }
     }
 
     if (_obfs == "websocket") {
@@ -1208,6 +1221,8 @@ class V2RayTxtUtils {
       clash.vless!.grpc_opts = ClashYamlGRPCOptions();
       clash.vless!.grpc_opts!.service_name = _serviceName;
     }
+    // Note: xhttp branch above already set clash.vless!.xhttp_opts
+    // when _type == "xhttp" / "splithttp". Nothing else to do here.
     return true;
   }
 
@@ -1331,6 +1346,16 @@ class V2RayTxtUtils {
     } else if (clash.trojan!.network == "grpc") {
       clash.trojan!.grpc_opts = ClashYamlGRPCOptions();
       clash.trojan!.grpc_opts!.service_name = _serviceName;
+    } else if (isXHttpNetwork(clash.trojan!.network) ||
+        isXHttpNetwork(_network)) {
+      // XHTTP transport for trojan — same param parsing as VLESS.
+      final params = V2RayXHttpUrlParams.parse(uri.queryParameters);
+      clash.trojan!.xhttp_opts = ClashYamlXHttpOptions.fromUrlParams(params);
+      if (clash.trojan!.network == null ||
+          clash.trojan!.network!.isEmpty ||
+          clash.trojan!.network == "tcp") {
+        clash.trojan!.network = "xhttp";
+      }
     }
     return true;
   }
@@ -1457,6 +1482,16 @@ class V2RayTxtUtils {
     } else if (clash.trojan!.network == "grpc") {
       clash.trojan!.grpc_opts = ClashYamlGRPCOptions();
       clash.trojan!.grpc_opts!.service_name = _serviceName;
+    } else if (isXHttpNetwork(clash.trojan!.network) ||
+        isXHttpNetwork(_network)) {
+      // XHTTP transport for trojan-go — same param parsing as VLESS.
+      final params = V2RayXHttpUrlParams.parse(uri.queryParameters);
+      clash.trojan!.xhttp_opts = ClashYamlXHttpOptions.fromUrlParams(params);
+      if (clash.trojan!.network == null ||
+          clash.trojan!.network!.isEmpty ||
+          clash.trojan!.network == "tcp") {
+        clash.trojan!.network = "xhttp";
+      }
     }
     return true;
   }
